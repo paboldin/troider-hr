@@ -10,20 +10,9 @@ function TreeGenerator(crl, lcr) {
         throw ("Invalid arg lengths: crl.length = " + crl.length +
                " vs lcr.length = " + lcr.length);
 
-    var stateHeap = Array.apply(null, Array(crl.length)).map(
+    var stateHeap = Array.apply(null, Array(crl.length*4)).map(
       function(){ return null; });
     var currentLevel = -1;
-    stateHeap[0] = {
-        lcr: {
-          left: 0,
-          center: -1,
-          right: lcr.length
-        },
-        crl: {
-          left: 0,
-          right: crl.length
-        },
-    };
 
     this._printState = function(state) {
       if (state === null) {
@@ -48,7 +37,7 @@ function TreeGenerator(crl, lcr) {
       if (state.lcr.left > state.lcr.right)
         return null;
       return state;
-    }
+    };
 
 
     this._iterState = function(parentState) {
@@ -70,7 +59,7 @@ function TreeGenerator(crl, lcr) {
         },
       };
 
-      var crlCenter = lcr.length - center - 1;
+      var crlCenter = parentState.lcr.right - center;
 
       var leftState = {
         lcr: {
@@ -79,12 +68,10 @@ function TreeGenerator(crl, lcr) {
           right: center - 1,
         },
         crl: {
-          left: 1 + crlCenter,
+          left: 1 + parentState.crl.left + crlCenter, /* skip the 'centerSymbol' itself */
           right: parentState.crl.right,
         },
       };
-
-      leftState = this._checkState(leftState);
 
       var rightState = {
         lcr: {
@@ -93,25 +80,87 @@ function TreeGenerator(crl, lcr) {
           right: parentState.lcr.right,
         },
         crl: {
-          left: parentState.crl.left + 1, /* skip the 'centerSymbol' itself */
-          right: crlCenter,
+          left: 1 + parentState.crl.left, /* skip the 'centerSymbol' itself */
+          right: parentState.crl.left + crlCenter,
         },
       };
 
+  /*
+      console.log('new');
+      this._printState(newState);
+      console.log('left');
+      this._printState(leftState);
+      console.log('right');
+      this._printState(rightState);
+    */
+
+      leftState = this._checkState(leftState);
       rightState = this._checkState(rightState);
 
       return [newState, leftState, rightState];
     };
 
-    this._buildTree = function(stateHeap, i) {
+    this._startTree = function() {
+      currentLevel = 0;
+      console.log(stateHeap.length);
+
+      stateHeap[0] = {
+        lcr: {
+          left: 0,
+          center: -1,
+          right: lcr.length - 1,
+        },
+        crl: {
+          left: 0,
+          right: crl.length - 1,
+        },
+      };
+
+      while(currentLevel >= 0 && currentLevel < stateHeap.length) {
+        if (stateHeap[currentLevel] === null) {
+          console.log(currentLevel);
+          currentLevel++;
+          continue;
+        }
+        var result = this._iterState(stateHeap[currentLevel]);
+        if (result === undefined)
+          break;
+          
+        var newResult = result[0];
+        var leftResult = result[1];
+        var rightResult = result[2];
+
+        console.log(newResult);
+
+        stateHeap[currentLevel] = result[0];
+        if (leftResult)
+            stateHeap[2*currentLevel + 1] = result[1]; /* left */
+        if (rightResult)
+            stateHeap[2*currentLevel + 2] = result[2]; /* right */
+        currentLevel++;
+      }
+    };
+
+    this.iterateTree = function() {
+      if (currentLevel == -1) {
+        this._startTree();
+      }
+      else {
+        this._iterTree();
+      }
+
+      return this._treeFromStateHeap(stateHeap, 0);
+    };
+
+    this._treeFromStateHeap = function(stateHeap, i) {
       i = i || 0;
       if (!stateHeap[i])
         return null;
 
       return {
         center: lcr[stateHeap[i].lcr.center],
-        left: this._buildTree(stateHeap, 2*i + 1),
-        right: this._buildTree(stateHeap, 2*i + 2),
+        left: this._treeFromStateHeap(stateHeap, 2*i + 1),
+        right: this._treeFromStateHeap(stateHeap, 2*i + 2),
       }
     };
 };
@@ -136,163 +185,6 @@ function printTreeRightLeftCenter(tree) {
   }
   return printTreeRightLeftCenter(tree.right) + printTreeRightLeftCenter(tree.left) + tree.center;
 }
-
-function assert(condition, message) {
-  if (!condition) {
-    throw message || "Assertion failed";
-  }
-}
-
-function test_getStartState(problem) {
-  var startState = {
-      lcr: {
-        left: 0,
-        center: -1,
-        right: problem.leftCenterRight.length - 1,
-      },
-      crl: {
-        left: 0,
-        right: problem.centerRightLeft.length - 1,
-      },
-  };
-
-  return startState;
-}
-
-function test_iterState() {
-  var problem = {
-    leftCenterRight: 'hal@irdamE',
-    centerRightLeft: 'damEra@ilh',
-  };
-  var tree = new TreeGenerator(problem.centerRightLeft, problem.leftCenterRight);
-
-  var startState = test_getStartState(problem);
-  var result = tree._iterState(startState);
-
-  assert(result[0].lcr.center == 6, "Center is correct");
-
-  assert(result[1].lcr.left == 0, "left subtree lcr.left is OK");
-  assert(result[1].lcr.right == 5, "left subtree lcr.right is OK");
-
-  assert(result[1].crl.left == 4, "left subtree crl.left is OK");
-  assert(result[1].crl.right == 9, "left subtree crl.right is OK");
-
-  assert(result[2].lcr.left == 7, "right subtree lcr.left is OK");
-  assert(result[2].lcr.right == 9, "right subtree lcr.right is OK");
-
-  assert(result[2].crl.left == 1, "right subtree crl.left is OK");
-  assert(result[2].crl.right == 3, "right subtree crl.right is OK");
-
-  if (debug) {
-    tree._printState(result[0]);
-    tree._printState(result[1]);
-    tree._printState(result[2]);
-  }
-}
-
-function test_iterState_line() {
-  var problem = {
-    leftCenterRight: 'damE',
-    centerRightLeft: 'damE',
-  };
-  var tree = new TreeGenerator(problem.centerRightLeft,
-                               problem.leftCenterRight);
-
-  var startState = test_getStartState(problem);
-  var result = tree._iterState(startState);
-  var result = tree._iterState(result[2]);
-  var result = tree._iterState(result[2]);
-  assert(result[2].lcr.left == 3, "right subtree line is OK");
-  assert(result[2].lcr.right == 3, "right subtree line is OK");
-  assert(result[2].crl.left == 3, "right subtree line is OK");
-  assert(result[2].crl.right == 3, "right subtree line is OK");
-  var result = tree._iterState(result[2]);
-  assert(result === undefined);
-}
-
-function test_iterState_ambig() {
-  var problem = {
-    leftCenterRight: 'hal@irddamE',
-    centerRightLeft: 'ddamEra@ilh',
-  };
-  var tree = new TreeGenerator(problem.centerRightLeft,
-                               problem.leftCenterRight);
-
-  var startState = test_getStartState(problem);
-  var result = tree._iterState(startState);
-  assert(result[0].lcr.center == 6, "center set OK");
-
-  result = tree._iterState(result[0]);
-  assert(result[0].lcr.center == 7, "center moved forward");
-
-  result = tree._iterState(result[0]);
-  assert(result === undefined, "center finished forward");
-}
-
-function test_iterState_tree() {
-  var problem = {
-    //leftCenterRight: 'hal@irdamE',
-    //centerRightLeft: 'damEra@ilh',
-    leftCenterRight: 'bcd',
-    centerRightLeft: 'bdc',
-  };
-  var tree = new TreeGenerator(problem.centerRightLeft, problem.leftCenterRight);
-
-  var stateHeap = Array.apply(null, Array(problem.leftCenterRight.length*4)).map(
-    function(){ return null; });
-  stateHeap[0] = test_getStartState(problem);
-  var currentLevel = 0, i = 0;
-  while(currentLevel >= 0 && currentLevel < stateHeap.length) {
-    if (stateHeap[currentLevel] === null) {
-      currentLevel++;
-      continue;
-    }
-    if (i++ > 1000)
-        break;
-    var result = tree._iterState(stateHeap[currentLevel]);
-    if (result === undefined) {
-      currentLevel--;
-      continue;
-    }
-      
-    var newResult = result[0];
-    var leftResult = result[1];
-    var rightResult = result[2];
-
-    console.log(currentLevel);
-    console.log('new');
-    tree._printState(newResult);
-    console.log('left');
-    tree._printState(leftResult);
-    console.log('right');
-    tree._printState(rightResult);
-
-    stateHeap[currentLevel] = newResult;
-    if (leftResult)
-        stateHeap[2*currentLevel + 1] = leftResult;
-    if (rightResult)
-        stateHeap[2*currentLevel + 2] = rightResult;
-    currentLevel++;
-  }
-  var tr = tree._buildTree(stateHeap);
-  console.log(printTreeLeftCenterRight(tr));
-  /*
-  for (var i in stateHeap) {
-    if (stateHeap[i]) {
-      console.log(i);
-      tree._printState(stateHeap[i]);
-    }
-  }
-  */
-}
-
-//test_iterState();
-/*
-test_iterState_ambig();
-*/
-
-test_iterState_tree();
-//test_iterState_line();
 
 /*
 function findEmail(centerRightLeft, leftCenterRight) {
