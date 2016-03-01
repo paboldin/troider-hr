@@ -1,5 +1,6 @@
 
 var debug = true;
+var debug_iterState = true;
 var DEBUG = function(){console.log.apply(console, arguments)};
 
 if (!debug)
@@ -10,9 +11,8 @@ function TreeGenerator(crl, lcr) {
         throw ("Invalid arg lengths: crl.length = " + crl.length +
                " vs lcr.length = " + lcr.length);
 
-    var stateHeap = Array.apply(null, Array(crl.length*4)).map(
-      function(){ return null; });
-    var currentLevel = -1;
+    var stateHeap = [];
+    var currentElem = -1;
 
     this._printState = function(state) {
       if (state === null) {
@@ -30,6 +30,11 @@ function TreeGenerator(crl, lcr) {
 
       console.log('state.crl', state.crl);
       console.log('crl', crl.substring(state.crl.left, state.crl.right + 1));
+      if (state.crl.center >= state.crl.left) {
+        var center = '-'.repeat(state.crl.center - state.crl.left) + '^' +
+                     '-'.repeat(state.crl.right - state.crl.center);
+        console.log('crl', center);
+      }
     };
 
 
@@ -44,8 +49,11 @@ function TreeGenerator(crl, lcr) {
       var centerSymbol = crl[parentState.crl.left];
       var center = lcr.indexOf(centerSymbol, parentState.lcr.center + 1);
 
-      if (center < 0 || center > parentState.lcr.right)
+      if (center < 0 || center > parentState.lcr.right) {
         return;
+      }
+
+      var crlCenter = parentState.lcr.right - center;
 
       var newState = {
         lcr: {
@@ -55,11 +63,11 @@ function TreeGenerator(crl, lcr) {
         },
         crl: {
           left: parentState.crl.left,
+          center: parentState.crl.left + crlCenter,
           right: parentState.crl.right,
         },
       };
 
-      var crlCenter = parentState.lcr.right - center;
 
       var leftState = {
         lcr: {
@@ -85,25 +93,22 @@ function TreeGenerator(crl, lcr) {
         },
       };
 
-  /*
-      console.log('new');
-      this._printState(newState);
-      console.log('left');
-      this._printState(leftState);
-      console.log('right');
-      this._printState(rightState);
-    */
-
       leftState = this._checkState(leftState);
       rightState = this._checkState(rightState);
+
+      if (debug_iterState) {
+          console.log('new');
+          this._printState(newState);
+          console.log('left');
+          this._printState(leftState);
+          console.log('right');
+          this._printState(rightState);
+      }
 
       return [newState, leftState, rightState];
     };
 
     this._startTree = function() {
-      currentLevel = 0;
-      console.log(stateHeap.length);
-
       stateHeap[0] = {
         lcr: {
           left: 0,
@@ -115,29 +120,29 @@ function TreeGenerator(crl, lcr) {
           right: crl.length - 1,
         },
       };
+      currentElem = 0;
 
-      while(currentLevel >= 0 && currentLevel < stateHeap.length) {
-        if (stateHeap[currentLevel] === null) {
-          console.log(currentLevel);
+      while(currentElem >= 0 && currentElem < stateHeap.length) {
+        console.log(currentElem);
+        if (!stateHeap[currentElem]) {
           currentLevel++;
           continue;
         }
-        var result = this._iterState(stateHeap[currentLevel]);
-        if (result === undefined)
-          break;
+        var result = this._iterState(stateHeap[currentElem]);
+        if (result === undefined) {
+          var currentState = stateHeap[currentElem];
+          this._printState(currentState);
+
+          stateHeap[currentElem] = null;
+          currentElem = currentState.parent;
+          continue;
+        }
           
-        var newResult = result[0];
-        var leftResult = result[1];
-        var rightResult = result[2];
-
-        console.log(newResult);
-
-        stateHeap[currentLevel] = result[0];
-        if (leftResult)
-            stateHeap[2*currentLevel + 1] = result[1]; /* left */
-        if (rightResult)
-            stateHeap[2*currentLevel + 2] = result[2]; /* right */
-        currentLevel++;
+        stateHeap[currentElem] = result[0];
+        result[1].parent = result[2].parent = currentElem;
+        stateHeap[currentElem + 1] = result[1]; /* left */
+        stateHeap[currentElem + 2] = result[2]; /* right */
+        currentElem++;
       }
     };
 
@@ -185,29 +190,3 @@ function printTreeRightLeftCenter(tree) {
   }
   return printTreeRightLeftCenter(tree.right) + printTreeRightLeftCenter(tree.left) + tree.center;
 }
-
-/*
-function findEmail(centerRightLeft, leftCenterRight) {
-  var generator = new TreeGenerator(centerRightLeft, leftCenterRight);
-  var tree = generator.generateNextTree();
-  console.log("'" + printTreeRightLeftCenter(tree) + "'");
-  var tree = generator.generateNextTree();
-  console.log("'" + printTreeRightLeftCenter(tree) + "'");
-  console.log(tree);
-  console.log(printTreeCenterRightLeft(tree) == centerRightLeft);
-  console.log(printTreeLeftCenterRight(tree) == leftCenterRight);
-  console.log("'" + printTreeRightLeftCenter(tree) + "'");
-}
-
-var easyProblem = {
-  centerRightLeft: 'damEra@ilh',
-  leftCenterRight: 'hal@irdamE',
-}
-findEmail(easyProblem.centerRightLeft, easyProblem.leftCenterRight);
-var hardProblem = {
-  centerRightLeft: '.o elPsaec lamei.a sur@h treotrdil0ems.al Pe7  dnse8dco9e:i438f7bfc5224b5d151bdc4ai bc91eamuoy ne r',
-  leftCenterRight: 'er muyn oaia1e 9cbi14bdcc55d15b4227fb43f8l:9e8odc7dens  0eaPl s.em.iderotrr@t h.aus c ilaemo saeelP',
-}
-//findEmail(hardProblem.centerRightLeft, hardProblem.leftCenterRight);
-//findEmail('5224b5d15', '55d15b422');
-*/

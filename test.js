@@ -123,10 +123,55 @@ function test_iterState_tree() {
     console.log(printTreeRightLeftCenter(tr));
     assert(problem.leftCenterRight == printTreeLeftCenterRight(tr), "lcr ok");
     assert(problem.centerRightLeft == printTreeCenterRightLeft(tr), "crl ok");
+    break;
   }
 }
 
+function test_generateTree(text) {
+    text = text || "Hello World, Where have you been lately?";
+
+    var generate = function(t){
+        if (t == '')
+            return null;
+        if (t.length == 1)
+            return {center: t};
+
+        var c = Math.floor(Math.random() * t.length)
+        var l = t.substr(0, c);
+        var r = t.substr(c + 1);
+        return {
+            center: t[c],
+            left: generate(l),
+            right: generate(r),
+        };
+    };
+
+    return generate(text);
+}
+
+function test_withGeneratedTree(text) {
+    var tree = test_generateTree(text);
+    var leftCenterRight = printTreeLeftCenterRight(tree);
+    var centerRightLeft = printTreeCenterRightLeft(tree);
+    if (0) {
+        leftCenterRight = "abcdef";
+        centerRightLeft = "bcdfea";
+    }
+
+    var treegen = new TreeGenerator(centerRightLeft, leftCenterRight);
+    var tr = treegen.iterateTree();
+
+    console.log(printTreeLeftCenterRight(tr), leftCenterRight);
+    console.log(leftCenterRight, centerRightLeft);
+}
+
+//test_withGeneratedTree("hello there");
+
+/*
 test_iterState();
 test_iterState_ambig();
+*/
 test_iterState_tree();
+/*
 test_iterState_line();
+*/
