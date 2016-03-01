@@ -1,0 +1,107 @@
+<html>
+<body>
+<script type='text/javascript'>
+
+var DEBUG = function(){console.log.apply(console, arguments)};
+//DEBUG = function(){};
+
+function TreeGenerator(crl, lcr) {
+    if (crl.length != lcr.length)
+        throw ("Invalid arg lengths: crl.length = " + crl.length +
+               " vs lcr.length = " + lcr.length);
+
+    var stateHeap = Array.apply(null, Array(crl.length)).map(
+      function(){ return {left: -1}; });
+    var currentLevel = -1;
+
+    this._buildMatchingTree = function(level) {
+
+      var possibleCenter = 
+      stateHeap[level].center = lcr.indexOf(center, stateHeap[level].left + 1);
+      DEBUG(stateHeap, level, currentLevel);
+
+      if (stateHeap[level].center < 0 || stateH)
+        return false;
+
+      var possibleCenterPos = stateHeap[level];
+      var possibleCRLCenter = lcr.length - possibleCenterPos;
+
+      var possibleLeftLCR = lcr.substr(0, possibleCenterPos);
+      var possibleRightLCR = lcr.substr(possibleCenterPos + 1);
+
+      var possibleLeftCRL = crl.substr(possibleCRLCenter);
+      var possibleRightCRL = crl.substr(1, possibleCRLCenter - 1);
+
+/* FIXME: think how stateHeap should be iterated */
+
+//    DEBUG('left', level);
+      var possibleLeft = this._buildMatchingTree(
+        possibleLeftCRL, possibleLeftLCR, 2*level+1);
+
+//    DEBUG('right', level);
+      var possibleRight = this._buildMatchingTree(
+        possibleRightCRL, possibleRightLCR, 2*level+2);
+
+      if (possibleLeft === false || possibleRight === false) {
+        return false;
+      }
+
+      return {
+          center: center,
+          left: possibleLeft,
+          right: possibleRight,
+      };
+    };
+
+    this.generateNextTree = function() {
+      return this._buildMatchingTree(crl, lcr, 0);
+    };
+};
+
+function printTreeCenterRightLeft(tree) {
+  if (tree == null) {
+    return '';
+  }
+  return tree.center + printTreeCenterRightLeft(tree.right) + printTreeCenterRightLeft(tree.left);
+}
+
+function printTreeLeftCenterRight(tree) {
+  if (tree == null) {
+    return '';
+  }
+  return printTreeLeftCenterRight(tree.left) + tree.center + printTreeLeftCenterRight(tree.right);
+}
+
+function printTreeRightLeftCenter(tree) {
+  if (tree == null) {
+    return '';
+  }
+  return printTreeRightLeftCenter(tree.right) + printTreeRightLeftCenter(tree.left) + tree.center;
+}
+
+function findEmail(centerRightLeft, leftCenterRight) {
+  var generator = new TreeGenerator(centerRightLeft, leftCenterRight);
+  var tree = generator.generateNextTree();
+  console.log("'" + printTreeRightLeftCenter(tree) + "'");
+  var tree = generator.generateNextTree();
+  console.log("'" + printTreeRightLeftCenter(tree) + "'");
+  console.log(tree);
+  console.log(printTreeCenterRightLeft(tree) == centerRightLeft);
+  console.log(printTreeLeftCenterRight(tree) == leftCenterRight);
+  console.log("'" + printTreeRightLeftCenter(tree) + "'");
+}
+
+var easyProblem = {
+  centerRightLeft: 'damEra@ilh',
+  leftCenterRight: 'hal@irdamE',
+}
+findEmail(easyProblem.centerRightLeft, easyProblem.leftCenterRight);
+var hardProblem = {
+  centerRightLeft: '.o elPsaec lamei.a sur@h treotrdil0ems.al Pe7  dnse8dco9e:i438f7bfc5224b5d151bdc4ai bc91eamuoy ne r',
+  leftCenterRight: 'er muyn oaia1e 9cbi14bdcc55d15b4227fb43f8l:9e8odc7dens  0eaPl s.em.iderotrr@t h.aus c ilaemo saeelP',
+}
+//findEmail(hardProblem.centerRightLeft, hardProblem.leftCenterRight);
+//findEmail('5224b5d15', '55d15b422');
+</script>
+</body>
+</html>
