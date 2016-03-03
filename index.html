@@ -3,6 +3,27 @@
 <meta charset="utf-8">
 </head>
 <body>
+<script type='text/javascript' src='common.js'></script>
 <script type='text/javascript' src='code.js'></script>
+<script>
+function findEmail(centerRightLeft, leftCenterRight) {
+    var treeGen = new TreeGenerator(centerRightLeft, leftCenterRight);
+    var tree;
+    while (tree = treeGen.iterateTree()) {
+        console.log(printTreeRightLeftCenter(tree));
+    }
+}
+
+var easyProblem = {
+    centerRightLeft: 'damEra@ilh',
+    leftCenterRight: 'hal@irdamE',
+}
+findEmail(easyProblem.centerRightLeft, easyProblem.leftCenterRight);
+var hardProblem = {
+    centerRightLeft: '.o elPsaec lamei.a sur@h treotrdil0ems.al Pe7  dnse8dco9e:i438f7bfc5224b5d151bdc4ai bc91eamuoy ne r',
+    leftCenterRight: 'er muyn oaia1e 9cbi14bdcc55d15b4227fb43f8l:9e8odc7dens  0eaPl s.em.iderotrr@t h.aus c ilaemo saeelP',
+}
+findEmail(hardProblem.centerRightLeft, hardProblem.leftCenterRight);
+</script>
 </body>
 </html>
