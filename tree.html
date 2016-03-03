@@ -1,0 +1,80 @@
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+.node circle {
+    fill: #fff;
+    stroke: steelblue;
+    stroke-width: 3px;
+}
+
+.node text { font: 12px sans-serif; }
+
+.link {
+    fill: none;
+    stroke: #ccc;
+    stroke-width: 2px;
+}
+</style>
+</head>
+<body>
+<div id="next">
+<input type='button' onclick="return showNextTree();" value="Next Tree">
+<div id="lcr"></div>
+<div id="lcrOrig"></div>
+<div id="crl"></div>
+<div id="crlOrig"></div>
+<div id="rlc"></div>
+</div>
+<div id="svg"></div>
+
+<script src="http://d3js.org/d3.v3.js"></script>
+<script type='text/javascript' src='d3-tree.js'></script>
+
+<script type='text/javascript' src='common.js'></script>
+<script type='text/javascript' src='code.js'></script>
+<script type='text/javascript'>
+function treeToTreeData(tree, parent_) {
+    parent_ = parent_ || "null";
+    var treeData = {
+        name: "'" + tree.center + "'",
+        parent: parent_
+    };
+
+    if (tree.left || tree.right)
+        treeData.children = [];
+
+    if (tree.left)
+        treeData.children.push(treeToTreeData(tree.left, treeData.name));
+
+    if (tree.right)
+        treeData.children.push(treeToTreeData(tree.right, treeData.name));
+
+    return treeData;
+}
+
+function showTreeIterations(centerRightLeft, leftCenterRight) {
+    var treeGen = new TreeGenerator(centerRightLeft, leftCenterRight);
+    return function() {
+        var tree = treeGen.iterateTree();
+        if (!tree)
+            return false;
+
+        d3.select("#lcr").html(printTreeLeftCenterRight(tree));
+        d3.select("#lcrOrig").html(leftCenterRight);
+        d3.select("#crl").html(printTreeCenterRightLeft(tree));
+        d3.select("#crlOrig").html(centerRightLeft);
+        d3.select("#rlc").html(printTreeRightLeftCenter(tree));
+        var treeData = treeToTreeData(tree);
+        update(treeData);
+    };
+}
+
+var hardProblem = {
+    centerRightLeft: '.o elPsaec lamei.a sur@h treotrdil0ems.al Pe7  dnse8dco9e:i438f7bfc5224b5d151bdc4ai bc91eamuoy ne r',
+    leftCenterRight: 'er muyn oaia1e 9cbi14bdcc55d15b4227fb43f8l:9e8odc7dens  0eaPl s.em.iderotrr@t h.aus c ilaemo saeelP',
+}
+var showNextTree = showTreeIterations(hardProblem.centerRightLeft, hardProblem.leftCenterRight);
+</script>
+</body>
+</html>
