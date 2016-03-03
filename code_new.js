@@ -27,8 +27,6 @@ function TreeGenerator(crl, lcr) {
         };
 
         this.next = function() {
-            //console.log('NodeStatic', center, shown);
-            //throw new Error("WHAT?");
             if (shown)
                 return;
 
@@ -152,9 +150,6 @@ function TreeGenerator(crl, lcr) {
                 if (newSubtree = nextIterators())
                     break;
 
-            //console.log('new subtree');
-            //_print(l);
-
             return newSubtree;
         };
 
@@ -196,21 +191,13 @@ function TreeGenerator(crl, lcr) {
         };
 
         this.next = function(l) {
-            /*
-            console.log("L" +l, 'next');
-            this.print(l);
-            console.log("L" + l, "left", left, "right", right);
-            */
             do {
                 if (!nextRight(l)) {
-        //            console.log('failed');
-         //           this.print(l);
                     return;
                 }
-                //console.log("L" + l, "left", left, "right", right);
-            /* undefined left or right means that sibling's .next()
-               failed to iterate due to impossible split
-             */
+                /* undefined left or right means that sibling's .next()
+                   failed to iterate due to impossible split
+                 */
             } while (left === undefined || right === undefined);
 
             return {
