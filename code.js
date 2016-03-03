@@ -11,8 +11,8 @@ function TreeGenerator(crl, lcr) {
         throw ("Invalid arg lengths: crl.length = " + crl.length +
                " vs lcr.length = " + lcr.length);
 
-    var stateHeap = [];
-    var currentElem = -1;
+    var stateObj = [];
+    var currentLevel = -1;
 
     this._printState = function(state) {
       if (state === null) {
@@ -109,7 +109,7 @@ function TreeGenerator(crl, lcr) {
     };
 
     this._startTree = function() {
-      stateHeap[0] = {
+      stateObj[0] = {
         lcr: {
           left: 0,
           center: -1,
@@ -120,29 +120,50 @@ function TreeGenerator(crl, lcr) {
           right: crl.length - 1,
         },
       };
-      currentElem = 0;
+      currentLevel = 0;
 
-      while(currentElem >= 0 && currentElem < stateHeap.length) {
-        console.log(currentElem);
-        if (!stateHeap[currentElem]) {
-          currentLevel++;
+      while(currentLevel >= 0 && currentLevel < stateObj.length) {
+        var levels = Object.keys(stateObj).map(
+                            function(e){return +e})
+                        .filter(
+                            function(a){ return a > currentLevel})
+                        .sort(
+                            function(a, b){ return a - b; });
+        var nextLevel = levels[0] || (currentLevel + 1);
+        console.log(nextLevel, currentLevel, levels);
+
+        if (!stateObj[currentLevel]) {
+          currentLevel = nextLevel;
           continue;
         }
-        var result = this._iterState(stateHeap[currentElem]);
-        if (result === undefined) {
-          var currentState = stateHeap[currentElem];
-          this._printState(currentState);
 
-          stateHeap[currentElem] = null;
-          currentElem = currentState.parent;
+        var result = this._iterState(stateObj[currentLevel]);
+        if (result === undefined) {
+          console.log('failed state');
+          this._printState(stateObj[currentLevel]);
+          /* Delete childs */
+          delete stateObj[2*currentLevel + 1];
+          delete stateObj[2*currentLevel + 2];
+          currentLevel = Math.floor((currentLevel - 1) / 2);
+          /* Delete self and sibling as well */
+          delete stateObj[2*currentLevel + 1];
+          delete stateObj[2*currentLevel + 2];
           continue;
         }
           
-        stateHeap[currentElem] = result[0];
-        result[1].parent = result[2].parent = currentElem;
-        stateHeap[currentElem + 1] = result[1]; /* left */
-        stateHeap[currentElem + 2] = result[2]; /* right */
-        currentElem++;
+        stateObj[currentLevel] = result[0];
+
+        if (result[1])
+          stateObj[2 * currentLevel + 1] = result[1]; /* left */
+        else
+          delete stateObj[2 * currentLevel + 1];
+
+        if (result[2])
+          stateObj[2 * currentLevel + 2] = result[2]; /* left */
+        else
+          delete stateObj[2 * currentLevel + 2];
+
+        currentLevel = nextLevel;
       }
     };
 
@@ -154,18 +175,20 @@ function TreeGenerator(crl, lcr) {
         this._iterTree();
       }
 
-      return this._treeFromStateHeap(stateHeap, 0);
+      return this._treeFromStateHeap(stateObj, 0);
     };
 
-    this._treeFromStateHeap = function(stateHeap, i) {
+    this._treeFromStateHeap = function(stateObj, i) {
       i = i || 0;
-      if (!stateHeap[i])
+      if (!stateObj[i])
         return null;
+      var center = lcr[stateObj[i].lcr.center];
+      console.log(i, stateObj[i].lcr, center);
 
       return {
-        center: lcr[stateHeap[i].lcr.center],
-        left: this._treeFromStateHeap(stateHeap, 2*i + 1),
-        right: this._treeFromStateHeap(stateHeap, 2*i + 2),
+        center: center,
+        left: this._treeFromStateHeap(stateObj, i*2 + 1),
+        right: this._treeFromStateHeap(stateObj, i*2 + 2),
       }
     };
 };
