@@ -58,6 +58,7 @@ function update(root) {
   // Enter the links.
   link.enter().insert("path", "g")
 	  .attr("class", "link")
+          .style("stroke", function(d) { return d.target.level; })
 	  .attr("d", diagonal);
 
 }

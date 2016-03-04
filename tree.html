@@ -34,21 +34,20 @@
 <script type='text/javascript' src='common.js'></script>
 <script type='text/javascript' src='code.js'></script>
 <script type='text/javascript'>
-function treeToTreeData(tree, parent_) {
-    parent_ = parent_ || "null";
+function treeToTreeData(tree, level) {
     var treeData = {
         name: "'" + tree.center + "'",
-        parent: parent_
+        level: level
     };
 
     if (tree.left || tree.right)
         treeData.children = [];
 
     if (tree.left)
-        treeData.children.push(treeToTreeData(tree.left, treeData.name));
+        treeData.children.push(treeToTreeData(tree.left, "red"));
 
     if (tree.right)
-        treeData.children.push(treeToTreeData(tree.right, treeData.name));
+        treeData.children.push(treeToTreeData(tree.right, "green"));
 
     return treeData;
 }
